@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thala Bat Challenge</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #ffcc00, #ff9900, #e6cf04, #ff3300);
+      background-size: 400% 400%;
+      animation: gradientShift 10s ease infinite;
+      overflow: hidden;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    header {
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 10px;
+      text-align: center;
+      font-size: 1.1rem;
+    }
+
+    #gameArea {
+      width: 100%;
+      height: calc(100vh - 50px);
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #ffcc00, #ff9900, #e6cf04, #ff3300);
+      background-size: 400% 400%;
+      animation: gradientShift 10s ease infinite;
+    }
+
+    .ball {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: black;
+      border: 2px solid black;
+    }
+
+    .yellow { background-color: yellow; }
+    .red { background-color: red; }
+    .blue { background-color: blue; }
+
+    #player {
+      width: 80px;
+      height: 80px;
+      background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRdm9lTEBWgYRecUU2V6uIj4IqCArKb2W4e6g&s');
+      background-size: cover;
+      background-position: center;
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      transition: left 0.2s ease;
+    }
+
+    #startScreen, #resultScreen {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(249, 245, 6, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      animation: fadeIn 1s ease;
+      text-align: center;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      width: 200px;
+      font-size: 1rem;
+      margin-top: 10px;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 1.1rem;
+      margin-top: 20px;
+      background: linear-gradient(45deg, #000000, #333333);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background: linear-gradient(45deg, #444, #000);
+      transform: scale(1.05);
+    }
+
+    #gameExplanation {
+      margin-top: 10px;
+      font-size: 1rem;
+      color: #333;
+      max-width: 90%;
+    }
+
+    .heart {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      background: url('https://cdn-icons-png.flaticon.com/512/833/833472.png') no-repeat center/contain;
+      animation: floatUp 3s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-100vh); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span id="playerDisplay">Player: </span>
+    <span id="score">Beaten: 0/7</span>
+  </header>
+
+  <div id="startScreen">
+    <h1 style="font-size: 2.5rem; color: #222;">🎂 Happy Birthday Thala 🎉</h1>
+    <input type="text" id="playerName" placeholder="Enter your name" />
+    <button onclick="startGame()">Start the Game</button>
+    <div id="gameExplanation">
+      <p>⚡ Your mission is simple!</p>
+      <ul style="text-align: left; max-width: 300px; margin: 10px auto; padding: 0 20px;">
+        <li>✅ Beat <strong>only yellow</strong> balls</li>
+        <li>🎯 Beat all 7 yellow balls properly to win the game</li>
+        <li>❌ Beating red or blue ends the game!</li>
+        <li>💪 Use <strong>←</strong> and <strong>→</strong> arrow keys or Swipe left/right on mobile</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="gameArea">
+    <div id="player"></div>
+  </div>
+
+  <div id="resultScreen" style="display: none;">
+    <h2 id="resultMessage"></h2>
+    <button onclick="location.reload()">Play Again</button>
+  </div>
+
+  <script>
+    const gameArea = document.getElementById('gameArea');
+    const player = document.getElementById('player');
+    const scoreDisplay = document.getElementById('score');
+    const playerDisplay = document.getElementById('playerDisplay');
+    const resultScreen = document.getElementById('resultScreen');
+    const resultMessage = document.getElementById('resultMessage');
+
+    let beaten = 0;
+    const totalYellow = 7;
+    let gameWidth = gameArea.offsetWidth;
+    let playerLeft = gameWidth / 2 - 40;
+
+    function updatePlayerPosition() {
+      player.style.left = `${playerLeft}px`;
+    }
+
+    function startGame() {
+      const name = document.getElementById('playerName').value || 'Thala Fan';
+      playerDisplay.innerText = `Player: ${name}`;
+      document.getElementById('startScreen').style.display = 'none';
+      movePlayer();
+      const interval = setInterval(() => {
+        if (beaten < totalYellow && resultScreen.style.display !== 'flex') {
+          spawnRandomBall();
+        } else {
+          clearInterval(interval);
+        }
+      }, 800);
+    }
+
+    function movePlayer() {
+      document.addEventListener('keydown', e => {
+        if (e.key === 'ArrowLeft') {
+          playerLeft -= 30;
+          if (playerLeft < 0) playerLeft = 0;
+        } else if (e.key === 'ArrowRight') {
+          playerLeft += 30;
+          if (playerLeft > gameWidth - 80) playerLeft = gameWidth - 80;
+        }
+        updatePlayerPosition();
+      });
+
+      let touchStartX = 0;
+      document.addEventListener('touchstart', e => {
+        touchStartX = e.touches[0].clientX;
+      });
+
+      document.addEventListener('touchmove', e => {
+        if (!touchStartX) return;
+        let touchEndX = e.touches[0].clientX;
+        let dx = touchEndX - touchStartX;
+
+        if (Math.abs(dx) > 30) {
+          if (dx > 0) {
+            playerLeft += 30;
+          } else {
+            playerLeft -= 30;
+          }
+          if (playerLeft < 0) playerLeft = 0;
+          if (playerLeft > gameWidth - 80) playerLeft = gameWidth - 80;
+          updatePlayerPosition();
+          touchStartX = null;
+        }
+      });
+    }
+
+    function spawnRandomBall() {
+      const colors = ['red', 'blue', 'yellow'];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      spawnBall(color);
+    }
+
+    function spawnBall(color) {
+      const ball = document.createElement('div');
+      ball.classList.add('ball', color);
+      let x = Math.random() * (gameArea.offsetWidth - 40);
+      ball.style.left = x + 'px';
+      ball.style.top = '0px';
+      gameArea.appendChild(ball);
+
+      let fall = setInterval(() => {
+        let top = parseFloat(ball.style.top);
+        top += 5;
+        ball.style.top = top + 'px';
+
+        if (top >= gameArea.offsetHeight - 80) {
+          const ballCenter = x + 20;
+          const playerCenter = playerLeft + 40;
+          if (Math.abs(ballCenter - playerCenter) < 50) {
+            clearInterval(fall);
+            if (color !== 'yellow') return lose('❌ You hit the wrong ball!');
+            beaten++;
+            scoreDisplay.innerText = `Beaten: ${beaten}/7`;
+            if (beaten === 7) return win();
+            ball.remove();
+          } else if (top >= gameArea.offsetHeight - 40) {
+            clearInterval(fall);
+            ball.remove();
+          }
+        }
+      }, 20);
+    }
+
+    function createHeart() {
+      const heart = document.createElement('div');
+      heart.className = 'heart';
+      heart.style.left = Math.random() * 100 + 'vw';
+      heart.style.top = '100vh';
+      document.body.appendChild(heart);
+      setTimeout(() => heart.remove(), 3000);
+    }
+
+    function win() {
+      resultScreen.style.display = 'flex';
+      resultMessage.innerText = '7 balls beaten... Thala for a reason 💪!';
+      setInterval(createHeart, 150);
+    }
+
+    function lose(reason) {
+      resultScreen.style.display = 'flex';
+      resultMessage.innerText = reason;
+      setTimeout(() => {
+        resultMessage.innerText = '😅 Thala for no reason';
+      }, 1000);
+    }
+
+    window.addEventListener('resize', () => {
+      gameWidth = gameArea.offsetWidth;
+    });
+  </script>
+</body>
+</html>
